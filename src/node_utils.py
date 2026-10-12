@@ -201,9 +201,12 @@ def extract_title(markdown: str) -> str:
             return block[2:].strip()
     raise ValueError("No h1 title found in markdown content.")
 
-def generate_page(from_path: str, template_path: str, dest_path: str) -> None:
+def generate_page(from_path: str, template_path: str, dest_path: str, base_path: str = "/") -> None:
     """Render the markdown at `from_path` into `template_path` and write `dest_path`."""
     print(f"Generating page from {from_path} using template {template_path} to {dest_path}")
+
+    if not base_path.endswith("/"):
+        base_path += "/"
 
     with open(from_path, "r", encoding="utf-8") as f:
         markdown = f.read()
@@ -215,12 +218,13 @@ def generate_page(from_path: str, template_path: str, dest_path: str) -> None:
     title = extract_title(markdown)
 
     page = template.replace("{{ Title }}", title).replace("{{ Content }}", html_string)
+    page = page.replace('href="/', f'href="{base_path}').replace('src="/', f'src="{base_path}')
 
     os.makedirs(os.path.dirname(dest_path), exist_ok=True)
     with open(dest_path, "w", encoding="utf-8") as f:
         f.write(page)
 
-def generate_pages_recursive(dir_path_content, template_path, dest_path) -> None:
+def generate_pages_recursive(dir_path_content, template_path, dest_path, base_path: str = "/") -> None:
     """Recursively generate pages from markdown files in `dir_path_content` using `template_path` and write to `dest_path`."""
     for root, dirs, files in os.walk(dir_path_content):
         for file in files:
@@ -230,4 +234,4 @@ def generate_pages_recursive(dir_path_content, template_path, dest_path) -> None
                 dest_file = os.path.splitext(relative_path)[0] + ".html"
                 dest_file_path = os.path.join(dest_path, dest_file)
 
-                generate_page(from_path, template_path, dest_file_path)
+                generate_page(from_path, template_path, dest_file_path, base_path)
